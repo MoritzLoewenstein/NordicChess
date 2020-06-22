@@ -17,9 +17,24 @@
       <button type="button" id="set-fen">Set Position</button>
       <button type="button" id="flip-board">Flip Board</button>
       <button type="button" id="new-game">New Game</button>
-      <button type="button" id="test">test</button>
+      <button type="button" id="info-expand">Info</button>
+      <button type="button" id="test">Test</button>
     </div>
     <div id="error"></div>
+    <div id="info">
+      <p>1. Your active piece</p>
+      <div
+        id="info-active"
+        style="background-image: url('images/wB.svg');"
+      ></div>
+      <p>2. Your active piece can move here</p>
+      <div id="info-possible"></div>
+      <p>3. You can beat this piece with your active piece</p>
+      <div
+        id="info-beatable"
+        style="background-image: url('images/bB.svg');"
+      ></div>
+    </div>
     <div id="board-columns">
       <div>a</div>
       <div>b</div>

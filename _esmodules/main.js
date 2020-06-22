@@ -12,9 +12,20 @@ window.onload = function () {
   document
     .getElementById("new-game")
     .addEventListener("click", (e) => loadFen(true));
+  document.getElementById("info-expand").addEventListener("click", (e) => {
+    document.getElementById("info").classList.toggle("expanded");
+    document.getElementById("info-expand").classList.toggle("expanded");
+  });
   document
     .getElementById("test")
     .addEventListener("click", (e) => setProbabilities(getRandomInt(100)));
+  document.querySelectorAll(".square").forEach((square) => {
+    square.addEventListener("click", setSquareActive);
+  });
+  //? tests
+  document.getElementById("a1").classList.add("possible");
+  document.getElementById("a2").classList.add("beatable");
+  movePiece("a2", "a3");
 };
 
 function loadFen(loadDefault = false) {
@@ -57,12 +68,18 @@ function setPiece(square, piece) {
   ).style.backgroundImage = `url(images/${piece}.svg)`;
 }
 
+function movePiece(squareSrc, squareDst) {
+  const img = document.getElementById(squareSrc).style.backgroundImage;
+  document.getElementById(squareDst).style.backgroundImage = img;
+  document.getElementById(squareSrc).style.backgroundImage = "none";
+}
+
 function removeAllPieces() {
   for (let rank = 0; rank < 8; rank++) {
     for (let file = 0; file < 8; file++) {
       document.getElementById(
         `${FILES_CHAR[file]}${RANKS_CHAR[rank]}`
-      ).style.backgroundImage = "";
+      ).style.backgroundImage = "none";
     }
   }
 }
@@ -91,4 +108,12 @@ function setProbabilities(whiteToWin) {
 
 function getRandomInt(max) {
   return Math.floor(Math.random() * Math.floor(max));
+}
+
+function setSquareActive(e) {
+  document
+    .querySelectorAll(".square")
+    .forEach((el) => el.classList.remove("active"));
+  e.target.classList.add("active");
+  //todo get movable & beatable squares
 }
