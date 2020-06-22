@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chess</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Roboto+Mono&display=swap"
+      rel="stylesheet"
+    />
+    <link href="css/style.css" rel="stylesheet" type="text/css" />
+    <script src="js/bundle.js"></script>
+  </head>
+  <body>
+    <div id="controls">
+      <input type="text" id="fen" placeholder="FEN" />
+      <button type="button" id="set-fen">Set Position</button>
+      <button type="button" id="flip-board">Flip Board</button>
+      <button type="button" id="new-game">New Game</button>
+      <button type="button" id="test">test</button>
+    </div>
+    <div id="error"></div>
+    <div id="board-columns">
+      <div>a</div>
+      <div>b</div>
+      <div>c</div>
+      <div>d</div>
+      <div>e</div>
+      <div>f</div>
+      <div>g</div>
+      <div>h</div>
+    </div>
+    <div id="board-container">
+      <div id="board-rows">
+        <div>8</div>
+        <div>7</div>
+        <div>6</div>
+        <div>5</div>
+        <div>4</div>
+        <div>3</div>
+        <div>2</div>
+        <div>1</div>
+      </div>
+      <div id="board">
+        <div id="a8" class="light square"></div>
+        <div id="b8" class="dark square"></div>
+        <div id="c8" class="light square"></div>
+        <div id="d8" class="dark square"></div>
+        <div id="e8" class="light square"></div>
+        <div id="f8" class="dark square"></div>
+        <div id="g8" class="light square"></div>
+        <div id="h8" class="dark square"></div>
+
+        <div id="a7" class="dark square"></div>
+        <div id="b7" class="light square"></div>
+        <div id="c7" class="dark square"></div>
+        <div id="d7" class="light square"></div>
+        <div id="e7" class="dark square"></div>
+        <div id="f7" class="light square"></div>
+        <div id="g7" class="dark square"></div>
+        <div id="h7" class="light square"></div>
+
+        <div id="a6" class="light square"></div>
+        <div id="b6" class="dark square"></div>
+        <div id="c6" class="light square"></div>
+        <div id="d6" class="dark square"></div>
+        <div id="e6" class="light square"></div>
+        <div id="f6" class="dark square"></div>
+        <div id="g6" class="light square"></div>
+        <div id="h6" class="dark square"></div>
+
+        <div id="a5" class="dark square"></div>
+        <div id="b5" class="light square"></div>
+        <div id="c5" class="dark square"></div>
+        <div id="d5" class="light square"></div>
+        <div id="e5" class="dark square"></div>
+        <div id="f5" class="light square"></div>
+        <div id="g5" class="dark square"></div>
+        <div id="h5" class="light square"></div>
+
+        <div id="a4" class="light square"></div>
+        <div id="b4" class="dark square"></div>
+        <div id="c4" class="light square"></div>
+        <div id="d4" class="dark square"></div>
+        <div id="e4" class="light square"></div>
+        <div id="f4" class="dark square"></div>
+        <div id="g4" class="light square"></div>
+        <div id="h4" class="dark square"></div>
+
+        <div id="a3" class="dark square"></div>
+        <div id="b3" class="light square"></div>
+        <div id="c3" class="dark square"></div>
+        <div id="d3" class="light square"></div>
+        <div id="e3" class="dark square"></div>
+        <div id="f3" class="light square"></div>
+        <div id="g3" class="dark square"></div>
+        <div id="h3" class="light square"></div>
+
+        <div id="a2" class="light square"></div>
+        <div id="b2" class="dark square"></div>
+        <div id="c2" class="light square"></div>
+        <div id="d2" class="dark square"></div>
+        <div id="e2" class="light square"></div>
+        <div id="f2" class="dark square"></div>
+        <div id="g2" class="light square"></div>
+        <div id="h2" class="dark square"></div>
+
+        <div id="a1" class="dark square"></div>
+        <div id="b1" class="light square"></div>
+        <div id="c1" class="dark square"></div>
+        <div id="d1" class="light square"></div>
+        <div id="e1" class="dark square"></div>
+        <div id="f1" class="light square"></div>
+        <div id="g1" class="dark square"></div>
+        <div id="h1" class="light square"></div>
+      </div>
+      <div id="board-rows">
+        <div>8</div>
+        <div>7</div>
+        <div>6</div>
+        <div>5</div>
+        <div>4</div>
+        <div>3</div>
+        <div>2</div>
+        <div>1</div>
+      </div>
+    </div>
+    <div id="board-columns">
+      <div>a</div>
+      <div>b</div>
+      <div>c</div>
+      <div>d</div>
+      <div>e</div>
+      <div>f</div>
+      <div>g</div>
+      <div>h</div>
+    </div>
+    <div id="probabilities"></div>
+  </body>
+</html>

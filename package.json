@@ -1,0 +1,16 @@
+{
+  "name": "chess_algo",
+  "version": "1.0.0",
+  "main": "chess_algo.js",
+  "type": "module",
+  "directories": {},
+  "scripts": {
+    "bundle": "rollup _esmodules/main.js --format iife --name \"ChessBot\" --file js/bundle.js",
+    "bundle-watch": "rollup _esmodules/main.js --format iife --name \"ChessBot\" --file js/bundle.js -w"
+  },
+  "keywords": [],
+  "author": "https://github.com/MoritzLoewenstein",
+  "license": "MIT",
+  "description": "",
+  "devDependencies": {}
+}
