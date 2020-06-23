@@ -15,12 +15,19 @@
   color: var(--light);
 }
 
+body {
+  min-height: 101vh;
+}
+
 button,
 input {
   padding: 0.5em 1em;
-  border-radius: 0.5em;
   border: 2px solid var(--accent-blue);
-  transition: all 200ms linear;
+  transition: border-color 0.2s linear;
+}
+
+button:hover {
+  cursor: pointer;
 }
 
 button:hover,
@@ -43,12 +50,17 @@ input:focus {
   justify-content: center;
   text-align: center;
   margin: 1em auto;
-  transition: opacity 0.6s ease-in-out, max-height 500ms linear;
+  transition: opacity 0.6s linear, max-height 0.5s ease-in-out;
 }
 
 #info.expanded {
   opacity: 1;
   max-height: 100vh;
+}
+
+#info,
+#info p {
+  background-color: transparent !important;
 }
 
 #info div.square {
@@ -60,7 +72,7 @@ input:focus {
 
 #info-active,
 #info-possible,
-#info-beatable {
+#info-capturable {
   height: 3.75vw;
   width: 3.75vw;
   background-repeat: no-repeat;
@@ -78,7 +90,7 @@ input:focus {
   background-color: var(--green);
 }
 
-#info-beatable {
+#info-capturable {
   background-color: var(--red);
 }
 
@@ -159,7 +171,7 @@ input:focus {
   background-color: var(--green);
 }
 
-.square.beatable {
+.square.capturable {
   background-color: var(--accent-orange);
 }
 

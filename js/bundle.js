@@ -539,8 +539,6 @@
       square.addEventListener("click", setSquareActive);
     });
     //? tests
-    document.getElementById("a1").classList.add("possible");
-    document.getElementById("a2").classList.add("beatable");
     movePiece("a2", "a3");
   };
 
@@ -627,11 +625,22 @@
   }
 
   function setSquareActive(e) {
-    document
-      .querySelectorAll(".square")
-      .forEach((el) => el.classList.remove("active"));
+    // remove all square markers
+    document.querySelectorAll(".square").forEach((el) => {
+      el.classList.remove("active");
+      el.classList.remove("possible");
+      el.classList.remove("capturable");
+    });
+    //todo get possible & capturable squares
+    //todo set possible & capturable classes
+    const possible = [];
+    const capturable = [];
+    // add active, possible & capturable markers
     e.target.classList.add("active");
-    //todo get movable & beatable squares
+    possible.map((sq) => document.getElementById(sq).classList.add("possible"));
+    capturable.map((sq) =>
+      document.getElementById(sq).classList.add("capturable")
+    );
   }
 
 }());
