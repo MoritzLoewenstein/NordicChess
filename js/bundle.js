@@ -534,7 +534,9 @@
     });
     document
       .getElementById("test")
-      .addEventListener("click", (e) => setProbabilities(getRandomInt(100)));
+      .addEventListener("click", (e) =>
+        setProbabilities(getRandomInt(100) / 100)
+      );
     document.querySelectorAll(".square").forEach((square) => {
       square.addEventListener("click", setSquareActive);
     });
@@ -611,13 +613,7 @@
   }
 
   function setProbabilities(whiteToWin) {
-    document.getElementById("probabilities").style.background = `linear-gradient(
-  to right,
-  var(--chess-light) 0%,
-  var(--chess-light) ${whiteToWin}%,
-  var(--chess-dark) ${whiteToWin}%,
-  var(--chess-dark) 100%
-  )`;
+    document.getElementById("prob-white").style.width = `${whiteToWin * 30}vw`;
   }
 
   function getRandomInt(max) {
