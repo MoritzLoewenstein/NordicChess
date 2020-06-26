@@ -191,11 +191,9 @@
     if (fields[0].match(/k/g).length !== 1 || fields[0].match(/K/g).length !== 1)
       throw new ValidationError("More than 1 king");
 
-    // todo
-    // kings need to be 1 apart
+    // todo kings need to be 1 apart
 
-    //* check
-    // todo
+    //* todo check
     /*
       Non-active color is not in check
       Active color is checked less than 3 times (triple check is impossible);
@@ -214,8 +212,7 @@
     )
       throw new ValidationError("Pawn in first or last rank");
 
-    //* en passant
-    // todo
+    //* todo en passant
     /*
       In case of en passant square:
       see if it was legally created (e.g it must be on the x3 or x6 rank,
@@ -223,8 +220,7 @@
       and the en passant and the one behind it are empty)
      */
 
-    //* promotion
-    // todo
+    //* todo promotion
     /*
       Prevent having more promoted pieces than missing pawns
       (e.g extra_pieces = Math.max(0, num_queens-1) + Math.max(0, num_rooks-2)...
@@ -234,8 +230,7 @@
       this information to the formula above somehow
     */
 
-    //* pawn formation
-    // todo
+    //* todo pawn formation
     /*
       The pawn formation is possible to reach (e.g in case of multiple pawns in a single col,
       there must be enough enemy pieces missing to make that formation), here are some useful rules:
@@ -249,14 +244,12 @@
          and this idea can be further expanded to cover more possibilities
     */
 
-    //* castling
-    // todo
+    //* todo castling
     /*
       If the king or rooks are not in their starting position; the castling ability for that side is lost (in the case of king, both are lost)
     */
 
-    //* bishops
-    // todo
+    //* todo bishops
     /*
       Look for bishops in the first and last ranks (rows) trapped by pawns that haven't moved, for example:
       1. a bishop (any color) trapped behind 3 pawns
@@ -264,8 +257,7 @@
          however if we check the number of pawns and extra_pieces we could determine if this case is possible or not)
     */
 
-    //* non-jumpers
-    // todo
+    //* todo non-jumpers
     /*
       (Avoid this if you want to validate Fisher's Chess960) If there are non-jumpers enemy pieces in between the king and rook and
       there are still some pawns without moving; check if these enemy pieces could have legally gotten in there. Also, ask yourself:
@@ -274,7 +266,7 @@
       there are other similar ideas, like if the white h-pawn moved once, the rooks should still be trapped inside the pawn formation, etc.
     */
 
-    //*Half/Full move Clocks
+    //* Half/Full move Clocks
     //In case of an en passant square, the half move clock must equal to 0
     const halfMovesClock = parseInt(fields[4], 10);
     const fullMoves = parseInt(fields[5], 10);
