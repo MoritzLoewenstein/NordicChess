@@ -194,16 +194,16 @@ input:focus {
 }
 
 #probabilities {
-  background: linear-gradient(
-    to right,
-    var(--chess-light) 0%,
-    var(--chess-light) 50%,
-    var(--chess-dark) 50%,
-    var(--chess-dark) 100%
-  );
+  background-color: var(--chess-dark);
   width: 30vw;
   border: 5px solid var(--accent-blue);
   margin: 1em auto;
   height: 2em;
-  transition: backgroud 0.5s linear;
+}
+
+#prob-white {
+  background-color: var(--chess-light);
+  width: 15vw;
+  height: 2em;
+  transition: width 0.5s ease-in-out;
 }
