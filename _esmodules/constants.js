@@ -1,5 +1,3 @@
-//* All constants which dont change during a game *//
-
 //* General *//
 
 //chess variants with default board and figures
@@ -21,53 +19,9 @@ export const RANKS_CHAR = "12345678";
 
 // board size with border
 export const BOARD_SIZE_SAFE = 120;
+
 // board size without border
 export const BOARD_SIZE = 64;
-
-// 120 board index to file and rank
-export function Square2FileRank(sq) {
-  sq = Sq120ToSq64[sq];
-  if (sq === 65) throw Error(`Invalid ${sq}`);
-  return [sq % 8, Math.floor(sq / 8)];
-}
-
-// file & rank to 120 board index
-export function FileRank2Square(f, r) {
-  if (f === FILES.NONE || r === RANKS.NONE)
-    throw Error(`Invalid File ${f} or Rank ${r}`);
-  return 21 + f + r * 10;
-}
-
-export function Str2Piece(str) {
-  switch (str) {
-    case "p":
-      return PIECES.blackPawn;
-    case "r":
-      return PIECES.blackRook;
-    case "n":
-      return PIECES.blackKnight;
-    case "b":
-      return PIECES.blackBishop;
-    case "k":
-      return PIECES.blackKing;
-    case "q":
-      return PIECES.blackQueen;
-    case "P":
-      return PIECES.whitePawn;
-    case "R":
-      return PIECES.whiteRook;
-    case "N":
-      return PIECES.whiteKnight;
-    case "B":
-      return PIECES.whiteBishop;
-    case "K":
-      return PIECES.whiteKing;
-    case "Q":
-      return PIECES.whiteQueen;
-    default:
-      return PIECES.EMPTY;
-  }
-}
 
 // integer representation of pieces
 export const PIECES = {
@@ -110,7 +64,7 @@ export const RANKS = {
   NONE: 8,
 };
 
-export const COLOURS = { WHITE: 0, BLACK: 1, BOTH: 2 };
+export const COLORS = { WHITE: 0, BLACK: 1, BOTH: 2 };
 
 export const CASTLEBITS = { WKCA: 1, WQCA: 2, BKCA: 4, BQCA: 8 };
 
@@ -164,16 +118,22 @@ export const PieceMin = [
 
 // prettier-ignore
 export const PieceVal = [
+  // empty
   0,
+  // white
   100, 325, 325, 550, 1000, 50000,
+  // black
   100, 325, 325, 550, 1000, 50000,
 ];
 
 // prettier-ignore
 export const PieceColor = [
-  COLOURS.BOTH,
-  COLOURS.WHITE, COLOURS.WHITE, COLOURS.WHITE, COLOURS.WHITE, COLOURS.WHITE, COLOURS.WHITE,
-  COLOURS.BLACK, COLOURS.BLACK, COLOURS.BLACK, COLOURS.BLACK, COLOURS.BLACK, COLOURS.BLACK,
+  // empty
+  COLORS.BOTH,
+  // white
+  COLORS.WHITE, COLORS.WHITE, COLORS.WHITE, COLORS.WHITE, COLORS.WHITE, COLORS.WHITE,
+  // black
+  COLORS.BLACK, COLORS.BLACK, COLORS.BLACK, COLORS.BLACK, COLORS.BLACK, COLORS.BLACK,
 ];
 
 // prettier-ignore
@@ -260,6 +220,7 @@ export const PieceSlides = [
   false,
 ];
 
+// Piece Directions on 120 board
 export const KnightDirections = [-8, -19, -21, -12, 8, 19, 21, 12];
 export const RookDirections = [-1, -10, 1, 10];
 export const BishopDirections = [-9, -11, 11, 9];

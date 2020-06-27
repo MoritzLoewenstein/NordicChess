@@ -1,8 +1,6 @@
 (function () {
   'use strict';
 
-  //* All constants which dont change during a game *//
-
   //* General *//
 
   //chess variants with default board and figures
@@ -17,51 +15,6 @@
   const FILES_CHAR = "abcdefgh";
 
   const RANKS_CHAR = "12345678";
-
-  // 120 board index to file and rank
-  function Square2FileRank(sq) {
-    sq = Sq120ToSq64[sq];
-    if (sq === 65) throw Error(`Invalid ${sq}`);
-    return [sq % 8, Math.floor(sq / 8)];
-  }
-
-  // file & rank to 120 board index
-  function FileRank2Square(f, r) {
-    if (f === FILES.NONE || r === RANKS.NONE)
-      throw Error(`Invalid File ${f} or Rank ${r}`);
-    return 21 + f + r * 10;
-  }
-
-  function Str2Piece(str) {
-    switch (str) {
-      case "p":
-        return PIECES.blackPawn;
-      case "r":
-        return PIECES.blackRook;
-      case "n":
-        return PIECES.blackKnight;
-      case "b":
-        return PIECES.blackBishop;
-      case "k":
-        return PIECES.blackKing;
-      case "q":
-        return PIECES.blackQueen;
-      case "P":
-        return PIECES.whitePawn;
-      case "R":
-        return PIECES.whiteRook;
-      case "N":
-        return PIECES.whiteKnight;
-      case "B":
-        return PIECES.whiteBishop;
-      case "K":
-        return PIECES.whiteKing;
-      case "Q":
-        return PIECES.whiteQueen;
-      default:
-        return PIECES.EMPTY;
-    }
-  }
 
   // integer representation of pieces
   const PIECES = {
@@ -104,6 +57,8 @@
     NONE: 8,
   };
 
+  const COLORS = { WHITE: 0, BLACK: 1, BOTH: 2 };
+
   const CASTLEBITS = { WKCA: 1, WQCA: 2, BKCA: 4, BQCA: 8 };
 
   // prettier-ignore
@@ -115,30 +70,78 @@
   };
 
   // prettier-ignore
-  // 120 Board for easy offboard detection
-  const Sq120ToSq64 = [
-    65, 65, 65, 65, 65, 65, 65, 65, 65, 65,
-    65, 65, 65, 65, 65, 65, 65, 65, 65, 65,
-    65,  0,  1,  2,  3,  4,  5,  6,  7, 65,
-    65,  8,  9, 10, 11, 12, 13, 14, 15, 65,
-    65, 16, 17, 18, 19, 20, 21, 22, 23, 65,
-    65, 24, 25, 26, 27, 28, 29, 30, 31, 65,
-    65, 32, 33, 34, 35, 36, 37, 38, 39, 65,
-    65, 40, 41, 42, 43, 44, 45, 46, 47, 65,
-    65, 48, 49, 50, 51, 52, 53, 54, 55, 65,
-    65, 56, 57, 58, 59, 60, 61, 62, 63, 65,
-    65, 65, 65, 65, 65, 65, 65, 65, 65, 65,
-    65, 65, 65, 65, 65, 65, 65, 65, 65, 65,
+  const PieceColor = [
+    // empty
+    COLORS.BOTH,
+    // white
+    COLORS.WHITE, COLORS.WHITE, COLORS.WHITE, COLORS.WHITE, COLORS.WHITE, COLORS.WHITE,
+    // black
+    COLORS.BLACK, COLORS.BLACK, COLORS.BLACK, COLORS.BLACK, COLORS.BLACK, COLORS.BLACK,
   ];
 
-  function isValidSquareString(field) {
-    return !!field.match(/^[a-h][1-8]$/);
-  }
+  // prettier-ignore
+  const PieceKnight = [
+    // empty
+    false,
+    // white
+    false,
+    true,
+    false, false, false, false,
+    // black
+    false,
+    true,
+    false, false, false, false,
+  ];
 
-  function isValidPieceString(figure, white) {
-    if (white === undefined) return !!figure.match(/^[rnbqkpRNBQKP]$/);
-    return white ? !!figure.match(/^[RNBQKP]$/) : !!figure.match(/^[rnbqkp]$/);
-  }
+  // prettier-ignore
+  const PieceKing = [
+    // empty
+    false,
+    // white
+    false, false, false, false, false,
+    true,
+    // black
+    false, false, false, false, false,
+    true,
+  ];
+
+  // prettier-ignore
+  const PieceRookQueen = [
+    // empty
+    false,
+    // white
+    false, false, false,
+    true, true,
+    false,
+    // black
+    false, false, false,
+    true, true,
+    false,
+  ];
+
+  // prettier-ignore
+  const PieceBishopQueen = [
+    // empty
+    false,
+    // white
+    false, false,
+    true,
+    false,
+    true,
+    false,
+    // black
+    false, false,
+    true,
+    false,
+    true,
+    false,
+  ];
+
+  // Piece Directions on 120 board
+  const KnightDirections = [-8, -19, -21, -12, 8, 19, 21, 12];
+  const RookDirections = [-1, -10, 1, 10];
+  const BishopDirections = [-9, -11, 11, 9];
+  const KingDirections = [-1, -10, 1, 10, -9, -11, 11, 9];
 
   // https://regex101.com/r/ykc7s9/9
   // https://chess.stackexchange.com/questions/1482/how-to-know-when-a-fen-position-is-legal
@@ -292,6 +295,59 @@
     }
   }
 
+  // 120 board index to file and rank
+  function Square2FileRank(sq) {
+    sq = Sq120ToSq64[sq];
+    if (sq === 65) throw Error(`Invalid ${sq}`);
+    return [sq % 8, Math.floor(sq / 8)];
+  }
+
+  // file & rank to 120 board index
+  function FileRank2Square(f, r) {
+    if (f === FILES.NONE || r === RANKS.NONE)
+      throw Error(`Invalid File ${f} or Rank ${r}`);
+    return 21 + f + r * 10;
+  }
+
+  // square str to 120 board index
+  function SquareStr2Square(str) {
+    return FileRank2Square(
+      FILES[`${str.charAt(0).toUpperCase()}_`],
+      RANKS[`_${str.charAt(1)}`]
+    );
+  }
+
+  function Str2Piece(str) {
+    switch (str) {
+      case "p":
+        return PIECES.blackPawn;
+      case "r":
+        return PIECES.blackRook;
+      case "n":
+        return PIECES.blackKnight;
+      case "b":
+        return PIECES.blackBishop;
+      case "k":
+        return PIECES.blackKing;
+      case "q":
+        return PIECES.blackQueen;
+      case "P":
+        return PIECES.whitePawn;
+      case "R":
+        return PIECES.whiteRook;
+      case "N":
+        return PIECES.whiteKnight;
+      case "B":
+        return PIECES.whiteBishop;
+      case "K":
+        return PIECES.whiteKing;
+      case "Q":
+        return PIECES.whiteQueen;
+      default:
+        return PIECES.EMPTY;
+    }
+  }
+
   // todo pgn
   //https://en.wikipedia.org/wiki/Portable_Game_Notation
 
@@ -307,7 +363,7 @@
 
     return {
       board: Fen2Board(fields[0]),
-      whiteIsNext: fields[1] === "w",
+      color: fields[1] === "w" ? COLORS.WHITE : COLORS.BLACK,
       castlingAvailability: Fen2Castling(fields[2]),
       enPassantSquare: Fen2EnPassant(fields[3]),
       halfMoveClock: parseInt(fields[4], 10),
@@ -394,7 +450,7 @@
       const props = importFen(fen);
       this.error = typeof props === "string" ? props : false;
       this.board = props.board;
-      this.whiteIsNext = props.whiteIsNext;
+      this.color = props.color;
       this.castlingAvailability = props.castlingAvailability;
       this.enPassantSquare = props.enPassantSquare;
       this.halfMoveClock = props.halfMoveClock;
@@ -402,70 +458,19 @@
       // sum of piece value for each player
       this.piecesValue = new Array(2).fill(0);
       // count of each piece
-      this.piecesCount = new Array(13);
+      this.piecesCount = new Array(13).fill(0);
+      // list of each piece
+      this.pieceList = new Array(14 * 10);
     }
 
     getField(field) {
-      //todo get field
       return "";
     }
 
-    moveNew(src, dest) {
-      // invalid fields
-      if (!isValidSquareString(src) || !isValidSquareString(dest)) return;
+    move(srcSquare, destSquare) {
       // empty src
-      if (this.getField(src) === "") return;
-    }
-
-    // https://en.wikipedia.org/wiki/Algebraic_notation_(chess)
-    move(mv) {
-      // resign
-      if (mv === "==") {
-        console.log(
-          this.whiteIsNext ? "0-1 White resigned" : "1-0 Black resigned"
-        );
-        return;
-      }
-      // draw offer
-      if (mv.endsWith("=")) {
-        mv = mv.substring(0, mv.length - 1);
-      }
-      // kingside castling
-      else if (mv === "0-0") this.castle(true);
-      // queenside castling
-      else if (mv === "0-0-0") this.castle(false);
-      // pawn move, e.g. "c5"
-      else if (isValidSquareString(mv)) ;
-      // normal move, e.g. "Bc5"
-      else if (
-        mv.length === 3 &&
-        isValidPieceString(mv.charAt(0), this.whiteIsNext === "w") &&
-        isValidSquareString(mv.slice(1))
-      ) ;
-      // normal capture, e.g. "Bxe5"
-      else if (
-        mv.length === 4 &&
-        mv.charAt(1) === "x" &&
-        isValidPieceString(mv.charAt(0), this.whiteIsNext === "w") &&
-        isValidSquareString(mv.slice(2))
-      ) ;
-      // en passant capture, e.g. "exd6e.p."
-      else if (mv.includes("e.p.")) ;
-    }
-
-    // true -> kingside, false -> queenside
-    castle(side) {
-      if (side) {
-        if (this.whiteIsNext === "w" && this.castlingAvailability.includes("K")) ; else if (
-          this.whiteIsNext === "b" &&
-          this.castlingAvailability.includes("k")
-        ) ;
-      } else {
-        if (this.whiteIsNext === "w" && this.castlingAvailability.includes("Q")) ; else if (
-          this.whiteIsNext === "b" &&
-          this.castlingAvailability.includes("q")
-        ) ;
-      }
+      if (this.board(srcSquare) === PIECES.EMPTY)
+        throw Error(`No piece on Square ${srcSquare}`);
     }
 
     isGameOver() {
@@ -489,6 +494,99 @@
 
     evaluate() {}
 
+    //* square and attacking color
+    isSquareAttacked(sq, color) {
+      if (color === COLORS.BOTH) {
+        // todo handle error
+        console.log("wtf");
+        return;
+      }
+
+      //* pawn
+      if (color === COLORS.WHITE) {
+        if (
+          this.board[sq - 11] === PIECES.whitePawn ||
+          this.board[sq - 9] === PIECES.whitePawn
+        )
+          return true;
+      } else {
+        if (
+          this.board[sq + 11] === PIECES.blackPawn ||
+          this.board[sq + 9] === PIECES.blackPawn
+        )
+          return true;
+      }
+
+      //* knight
+      for (let i = 0; i < 8; i++) {
+        let piece = this.board[sq + KnightDirections[i]];
+        if (
+          piece !== SQUARES.OFFBOARD &&
+          PieceColor[piece] === color &&
+          PieceKnight[piece]
+        )
+          return true;
+      }
+
+      //* rook & queen
+      for (let i = 0; i < 4; i++) {
+        let dir = RookDirections[i];
+        let t_sq = sq + dir;
+        let piece = this.board[t_sq];
+        while (piece !== SQUARES.OFFBOARD) {
+          if (piece !== PIECES.EMPTY) {
+            if (PieceRookQueen[piece] && PieceColor[piece] === color) return true;
+            break;
+          }
+          t_sq += dir;
+          piece = this.board[t_sq];
+        }
+      }
+
+      //* bishop & queen
+      for (let i = 0; i < 4; i++) {
+        let dir = BishopDirections[i];
+        let t_sq = sq + dir;
+        let piece = this.board[t_sq];
+        while (piece !== SQUARES.OFFBOARD) {
+          if (piece !== PIECES.EMPTY) {
+            if (PieceBishopQueen[piece] && PieceColor[piece] === color)
+              return true;
+            break;
+          }
+          t_sq += dir;
+          piece = this.board[t_sq];
+        }
+      }
+
+      //* king
+      for (let i = 0; i < 8; i++) {
+        let piece = this.board[sq + KingDirections[i]];
+        if (
+          piece !== SQUARES.OFFBOARD &&
+          PieceColor[piece] === color &&
+          PieceKing[piece]
+        )
+          return true;
+      }
+
+      return false;
+    }
+
+    printAttackedSquares() {
+      console.log("\nAttacked:\n");
+
+      for (let rank = RANKS._8; rank >= RANKS._1; rank--) {
+        let line = rank + 1 + "  ";
+        for (let file = FILES.A_; file <= FILES.H_; file++) {
+          let sq = FileRank2Square(file, rank);
+          let piece = this.isSquareAttacked(sq, this.color) ? "X" : "-";
+          line += " " + piece + " ";
+        }
+        console.log(line);
+      }
+    }
+
     prettyPrint() {
       console.log("\nGame Board:\n");
       for (let rank = RANKS._8; rank >= RANKS._1; rank--) {
@@ -501,13 +599,17 @@
         console.log(line);
       }
       console.log("\n    a  b  c  d  e  f  g  h\n");
-      console.log(this.whiteIsNext ? "White moves next\n" : "Black moves next\n");
+      console.log(
+        `${this.color === COLORS.WHITE ? "White" : "Black"} moves next\n`
+      );
       console.log(`Castling: ${Castling2Fen(this.castlingAvailability)}\n`);
       console.log(`En Passant Square: ${EnPassant2Fen(this.enPassantSquare)} \n`);
       console.log(`halfMoveClock: ${this.halfMoveClock}\n`);
       console.log(`fullMoveNumber: ${this.fullMoveNumber}\n`);
     }
   }
+
+  let chess;
 
   window.onload = function () {
     loadFen(true);
@@ -532,15 +634,13 @@
     document.querySelectorAll(".square").forEach((square) => {
       square.addEventListener("click", setSquareActive);
     });
-    //? tests
-    movePiece("a2", "a3");
   };
 
   function loadFen(loadDefault = false) {
     // ts syntax: let fen = (<HTMLInputElement>document.getElementById("fen")).value;
     let fen = loadDefault ? "" : document.getElementById("fen").value;
     document.getElementById("error").innerText = "";
-    let chess = new ChessPosition(fen);
+    chess = new ChessPosition(fen);
     if (typeof chess.error === "string") {
       document.getElementById("error").innerText = chess.error;
       return;
@@ -568,18 +668,14 @@
           setPiece(`${FILES_CHAR[file]}${RANKS_CHAR[rank]}`, piecesStr[pieceNum]);
       }
     }
+    chess.printAttackedSquares();
+    chess.prettyPrint();
   }
 
   function setPiece(square, piece) {
     document.getElementById(
       square
     ).style.backgroundImage = `url(images/${piece}.svg)`;
-  }
-
-  function movePiece(squareSrc, squareDst) {
-    const img = document.getElementById(squareSrc).style.backgroundImage;
-    document.getElementById(squareDst).style.backgroundImage = img;
-    document.getElementById(squareSrc).style.backgroundImage = "none";
   }
 
   function removeAllPieces() {
@@ -623,6 +719,11 @@
     //todo set possible & capturable classes
     const possible = [];
     const capturable = [];
+    // todo remove again
+    if (chess.isSquareAttacked(SquareStr2Square(e.target.id), chess.color)) {
+      e.target.classList.add("capturable");
+      return;
+    }
     // add active, possible & capturable markers
     e.target.classList.add("active");
     possible.map((sq) => document.getElementById(sq).classList.add("possible"));

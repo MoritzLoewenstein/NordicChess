@@ -1,6 +1,23 @@
 import { importFen, Castling2Fen, EnPassant2Fen } from "./parser.js";
 import { isValidSquareString, isValidPieceString } from "./validator.js";
-import { FILES, RANKS, PIECES_CHAR, FileRank2Square } from "./constants.js";
+import { FileRank2Square, SquareStr2Square } from "./funcs.js";
+import {
+  FILES,
+  RANKS,
+  PIECES_CHAR,
+  PIECES,
+  SQUARES,
+  COLORS,
+  KnightDirections,
+  RookDirections,
+  BishopDirections,
+  KingDirections,
+  PieceColor,
+  PieceKnight,
+  PieceRookQueen,
+  PieceBishopQueen,
+  PieceKing,
+} from "./constants.js";
 
 class ChessPosition {
   constructor(fen) {
@@ -8,7 +25,7 @@ class ChessPosition {
     const props = importFen(fen);
     this.error = typeof props === "string" ? props : false;
     this.board = props.board;
-    this.whiteIsNext = props.whiteIsNext;
+    this.color = props.color;
     this.castlingAvailability = props.castlingAvailability;
     this.enPassantSquare = props.enPassantSquare;
     this.halfMoveClock = props.halfMoveClock;
@@ -16,91 +33,19 @@ class ChessPosition {
     // sum of piece value for each player
     this.piecesValue = new Array(2).fill(0);
     // count of each piece
-    this.piecesCount = new Array(13);
+    this.piecesCount = new Array(13).fill(0);
+    // list of each piece
+    this.pieceList = new Array(14 * 10);
   }
 
   getField(field) {
-    //todo get field
     return "";
   }
 
-  moveNew(src, dest) {
-    // invalid fields
-    if (!isValidSquareString(src) || !isValidSquareString(dest)) return;
+  move(srcSquare, destSquare) {
     // empty src
-    if (this.getField(src) === "") return;
-  }
-
-  // https://en.wikipedia.org/wiki/Algebraic_notation_(chess)
-  move(mv) {
-    // resign
-    if (mv === "==") {
-      console.log(
-        this.whiteIsNext ? "0-1 White resigned" : "1-0 Black resigned"
-      );
-      return;
-    }
-
-    let offerDraw = false;
-    // draw offer
-    if (mv.endsWith("=")) {
-      offerDraw = true;
-      mv = mv.substring(0, mv.length - 1);
-    }
-    // kingside castling
-    else if (mv === "0-0") this.castle(true);
-    // queenside castling
-    else if (mv === "0-0-0") this.castle(false);
-    // pawn move, e.g. "c5"
-    else if (isValidSquareString(mv)) {
-      // todo move pawn
-    }
-    // normal move, e.g. "Bc5"
-    else if (
-      mv.length === 3 &&
-      isValidPieceString(mv.charAt(0), this.whiteIsNext === "w") &&
-      isValidSquareString(mv.slice(1))
-    ) {
-      // todo move figure
-    }
-    // normal capture, e.g. "Bxe5"
-    else if (
-      mv.length === 4 &&
-      mv.charAt(1) === "x" &&
-      isValidPieceString(mv.charAt(0), this.whiteIsNext === "w") &&
-      isValidSquareString(mv.slice(2))
-    ) {
-    }
-    // en passant capture, e.g. "exd6e.p."
-    else if (mv.includes("e.p.")) {
-    }
-  }
-
-  // true -> kingside, false -> queenside
-  castle(side) {
-    if (side) {
-      if (this.whiteIsNext === "w" && this.castlingAvailability.includes("K")) {
-        //todo castle kingside with white
-        // todo remove castling availability
-      } else if (
-        this.whiteIsNext === "b" &&
-        this.castlingAvailability.includes("k")
-      ) {
-        //todo castle kingside with black
-        // todo remove castling availability
-      }
-    } else {
-      if (this.whiteIsNext === "w" && this.castlingAvailability.includes("Q")) {
-        //todo castle queenside with white
-        // todo remove castling availability
-      } else if (
-        this.whiteIsNext === "b" &&
-        this.castlingAvailability.includes("q")
-      ) {
-        //todo castle queenside with black
-        // todo remove castling availability
-      }
-    }
+    if (this.board(srcSquare) === PIECES.EMPTY)
+      throw Error(`No piece on Square ${srcSquare}`);
   }
 
   isGameOver() {
@@ -124,6 +69,99 @@ class ChessPosition {
 
   evaluate() {}
 
+  //* square and attacking color
+  isSquareAttacked(sq, color) {
+    if (color === COLORS.BOTH) {
+      // todo handle error
+      console.log("wtf");
+      return;
+    }
+
+    //* pawn
+    if (color === COLORS.WHITE) {
+      if (
+        this.board[sq - 11] === PIECES.whitePawn ||
+        this.board[sq - 9] === PIECES.whitePawn
+      )
+        return true;
+    } else {
+      if (
+        this.board[sq + 11] === PIECES.blackPawn ||
+        this.board[sq + 9] === PIECES.blackPawn
+      )
+        return true;
+    }
+
+    //* knight
+    for (let i = 0; i < 8; i++) {
+      let piece = this.board[sq + KnightDirections[i]];
+      if (
+        piece !== SQUARES.OFFBOARD &&
+        PieceColor[piece] === color &&
+        PieceKnight[piece]
+      )
+        return true;
+    }
+
+    //* rook & queen
+    for (let i = 0; i < 4; i++) {
+      let dir = RookDirections[i];
+      let t_sq = sq + dir;
+      let piece = this.board[t_sq];
+      while (piece !== SQUARES.OFFBOARD) {
+        if (piece !== PIECES.EMPTY) {
+          if (PieceRookQueen[piece] && PieceColor[piece] === color) return true;
+          break;
+        }
+        t_sq += dir;
+        piece = this.board[t_sq];
+      }
+    }
+
+    //* bishop & queen
+    for (let i = 0; i < 4; i++) {
+      let dir = BishopDirections[i];
+      let t_sq = sq + dir;
+      let piece = this.board[t_sq];
+      while (piece !== SQUARES.OFFBOARD) {
+        if (piece !== PIECES.EMPTY) {
+          if (PieceBishopQueen[piece] && PieceColor[piece] === color)
+            return true;
+          break;
+        }
+        t_sq += dir;
+        piece = this.board[t_sq];
+      }
+    }
+
+    //* king
+    for (let i = 0; i < 8; i++) {
+      let piece = this.board[sq + KingDirections[i]];
+      if (
+        piece !== SQUARES.OFFBOARD &&
+        PieceColor[piece] === color &&
+        PieceKing[piece]
+      )
+        return true;
+    }
+
+    return false;
+  }
+
+  printAttackedSquares() {
+    console.log("\nAttacked:\n");
+
+    for (let rank = RANKS._8; rank >= RANKS._1; rank--) {
+      let line = rank + 1 + "  ";
+      for (let file = FILES.A_; file <= FILES.H_; file++) {
+        let sq = FileRank2Square(file, rank);
+        let piece = this.isSquareAttacked(sq, this.color) ? "X" : "-";
+        line += " " + piece + " ";
+      }
+      console.log(line);
+    }
+  }
+
   prettyPrint() {
     console.log("\nGame Board:\n");
     for (let rank = RANKS._8; rank >= RANKS._1; rank--) {
@@ -136,7 +174,9 @@ class ChessPosition {
       console.log(line);
     }
     console.log("\n    a  b  c  d  e  f  g  h\n");
-    console.log(this.whiteIsNext ? "White moves next\n" : "Black moves next\n");
+    console.log(
+      `${this.color === COLORS.WHITE ? "White" : "Black"} moves next\n`
+    );
     console.log(`Castling: ${Castling2Fen(this.castlingAvailability)}\n`);
     console.log(`En Passant Square: ${EnPassant2Fen(this.enPassantSquare)} \n`);
     console.log(`halfMoveClock: ${this.halfMoveClock}\n`);

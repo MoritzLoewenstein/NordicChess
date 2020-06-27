@@ -1,5 +1,8 @@
 import { ChessPosition } from "./chessgame.js";
-import { FILES_CHAR, RANKS_CHAR, FileRank2Square } from "./constants.js";
+import { FileRank2Square, SquareStr2Square } from "./funcs.js";
+import { FILES_CHAR, RANKS_CHAR } from "./constants.js";
+
+let chess;
 
 window.onload = function () {
   loadFen(true);
@@ -24,15 +27,13 @@ window.onload = function () {
   document.querySelectorAll(".square").forEach((square) => {
     square.addEventListener("click", setSquareActive);
   });
-  //? tests
-  movePiece("a2", "a3");
 };
 
 function loadFen(loadDefault = false) {
   // ts syntax: let fen = (<HTMLInputElement>document.getElementById("fen")).value;
   let fen = loadDefault ? "" : document.getElementById("fen").value;
   document.getElementById("error").innerText = "";
-  let chess = new ChessPosition(fen);
+  chess = new ChessPosition(fen);
   if (typeof chess.error === "string") {
     document.getElementById("error").innerText = chess.error;
     return;
@@ -60,6 +61,8 @@ function loadFen(loadDefault = false) {
         setPiece(`${FILES_CHAR[file]}${RANKS_CHAR[rank]}`, piecesStr[pieceNum]);
     }
   }
+  chess.printAttackedSquares();
+  chess.prettyPrint();
 }
 
 function setPiece(square, piece) {
@@ -115,6 +118,11 @@ function setSquareActive(e) {
   //todo set possible & capturable classes
   const possible = [];
   const capturable = [];
+  // todo remove again
+  if (chess.isSquareAttacked(SquareStr2Square(e.target.id), chess.color)) {
+    e.target.classList.add("capturable");
+    return;
+  }
   // add active, possible & capturable markers
   e.target.classList.add("active");
   possible.map((sq) => document.getElementById(sq).classList.add("possible"));

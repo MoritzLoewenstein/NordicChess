@@ -1,5 +1,7 @@
 import { isValidFen } from "./validator.js";
+import { FileRank2Square, Square2FileRank, Str2Piece } from "./funcs.js";
 import {
+  COLORS,
   VARIANTS,
   PIECES,
   FILES,
@@ -7,9 +9,6 @@ import {
   SQUARES,
   CASTLEBITS,
   FILES_CHAR,
-  FileRank2Square,
-  Square2FileRank,
-  Str2Piece,
 } from "./constants.js";
 
 // todo pgn
@@ -27,7 +26,7 @@ export function importFen(fen) {
 
   return {
     board: Fen2Board(fields[0]),
-    whiteIsNext: fields[1] === "w",
+    color: fields[1] === "w" ? COLORS.WHITE : COLORS.BLACK,
     castlingAvailability: Fen2Castling(fields[2]),
     enPassantSquare: Fen2EnPassant(fields[3]),
     halfMoveClock: parseInt(fields[4], 10),
@@ -37,7 +36,7 @@ export function importFen(fen) {
 
 export function exportFen(
   board,
-  whiteIsNext,
+  color,
   castlingAvailability,
   enPassant,
   halfMoveClock,
@@ -45,7 +44,7 @@ export function exportFen(
 ) {
   return [
     Board2Fen(board),
-    whiteIsNext ? "w" : "b",
+    color === COLORS.WHITE ? "w" : "b",
     Castling2Fen(castlingAvailability),
     enPassant,
     halfMoveClock,
