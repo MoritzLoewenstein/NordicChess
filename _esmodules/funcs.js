@@ -1,16 +1,26 @@
-import { FILES, RANKS, PIECES } from "./constants.js";
+import {
+  COLORS,
+  FILES,
+  RANKS,
+  PIECES,
+  FILES_CHAR,
+  RANKS_CHAR,
+  Sq120ToSq64,
+} from "./constants.js";
+
+//* utility functions to convert different board & piece representations *//
 
 // 120 board index to file and rank
 export function Square2FileRank(sq) {
   sq = Sq120ToSq64[sq];
-  if (sq === 65) throw Error(`Invalid ${sq}`);
+  if (sq === 65) throw Error(`Invalid square ${sq}`);
   return [sq % 8, Math.floor(sq / 8)];
 }
 
 // file & rank to 120 board index
 export function FileRank2Square(f, r) {
   if (f === FILES.NONE || r === RANKS.NONE)
-    throw Error(`Invalid File ${f} or Rank ${r}`);
+    throw Error(`Invalid file ${f} or rank ${r}`);
   return 21 + f + r * 10;
 }
 
@@ -20,6 +30,11 @@ export function SquareStr2Square(str) {
     FILES[`${str.charAt(0).toUpperCase()}_`],
     RANKS[`_${str.charAt(1)}`]
   );
+}
+
+export function Square2SquareStr(sq) {
+  const fr = Square2FileRank(sq);
+  return `${FILES_CHAR[fr[0]]}${RANKS_CHAR[fr[1]]}`;
 }
 
 export function Str2Piece(str) {
@@ -51,4 +66,9 @@ export function Str2Piece(str) {
     default:
       return PIECES.EMPTY;
   }
+}
+
+export function oppositeColor(color) {
+  if (color === COLORS.BOTH) throw Error("No opposite color for BOTH");
+  return color === COLORS.WHITE ? COLORS.BLACK : COLORS.WHITE;
 }

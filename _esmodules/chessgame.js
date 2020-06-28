@@ -1,6 +1,11 @@
 import { importFen, Castling2Fen, EnPassant2Fen } from "./parser.js";
 import { isValidSquareString, isValidPieceString } from "./validator.js";
-import { FileRank2Square, SquareStr2Square } from "./funcs.js";
+import {
+  FileRank2Square,
+  Square2FileRank,
+  SquareStr2Square,
+  oppositeColor,
+} from "./funcs.js";
 import {
   FILES,
   RANKS,
@@ -12,11 +17,13 @@ import {
   RookDirections,
   BishopDirections,
   KingDirections,
+  PieceDirections,
   PieceColor,
   PieceKnight,
   PieceRookQueen,
   PieceBishopQueen,
   PieceKing,
+  PiecePawn,
 } from "./constants.js";
 
 class ChessPosition {
@@ -71,11 +78,7 @@ class ChessPosition {
 
   //* square and attacking color
   isSquareAttacked(sq, color) {
-    if (color === COLORS.BOTH) {
-      // todo handle error
-      console.log("wtf");
-      return;
-    }
+    if (color === COLORS.BOTH) throw Error("Color must be black or white");
 
     //* pawn
     if (color === COLORS.WHITE) {
@@ -125,7 +128,7 @@ class ChessPosition {
       let piece = this.board[t_sq];
       while (piece !== SQUARES.OFFBOARD) {
         if (piece !== PIECES.EMPTY) {
-          if (PieceBishopQueen[piece] && PieceColor[piece] === color)
+          if (PieceColor[piece] === color && PieceBishopQueen[piece])
             return true;
           break;
         }
@@ -146,6 +149,60 @@ class ChessPosition {
     }
 
     return false;
+  }
+
+  getPossibleSquares(sq) {
+    const piece = this.board[sq];
+    const colorOfPiece = PieceColor[piece];
+    if (piece === SQUARES.OFFBOARD) throw Error("Square is offboard");
+    if (piece === PIECES.EMPTY) throw Error("Square is empty");
+
+    if (PiecePawn[piece]) {
+      const moves = [10, 20, 11, 9];
+      const conditions = [
+        // step forward
+        (move) =>
+          this.board[sq + move] !== SQUARES.OFFBOARD &&
+          this.board[sq + move] === PIECES.EMPTY,
+        // 2 steps forward
+        (move) =>
+          ((colorOfPiece === COLORS.WHITE &&
+            Square2FileRank(sq)[1] === RANKS._2) ||
+            (colorOfPiece === COLORS.BLACK &&
+              Square2FileRank(sq)[1] === RANKS._7)) &&
+          this.board[sq + move / 2] === PIECES.EMPTY &&
+          this.board[sq + move] === PIECES.EMPTY,
+        // capture forward right
+        (move) =>
+          this.board[sq + move] !== SQUARES.OFFBOARD &&
+          this.board[sq + move] !== PIECES.EMPTY &&
+          PieceColor[this.board[sq + move]] === oppositeColor(colorOfPiece),
+        // capture forward left
+        (move) =>
+          this.board[sq + move] !== SQUARES.OFFBOARD &&
+          this.board[sq + move] !== PIECES.EMPTY &&
+          PieceColor[this.board[sq + move]] === oppositeColor(colorOfPiece),
+      ];
+      const squares = [];
+      if (PieceColor[piece] === COLORS.WHITE)
+        moves.map((dir, index) => {
+          if (conditions[index](dir)) squares.push(sq + dir);
+        });
+      else
+        moves.map((dir, index) => {
+          if (conditions[index](-dir)) squares.push(sq - dir);
+        });
+      return squares;
+    }
+    if (PieceKnight[piece]) {
+      return KnightDirections.map((dir) => sq - dir).filter(
+        (destSquare) =>
+          this.board[destSquare] !== SQUARES.OFFBOARD &&
+          (this.board[destSquare] === PIECES.EMPTY ||
+            PieceColor[this.board[destSquare]] !== colorOfPiece)
+      );
+    }
+    return [];
   }
 
   printAttackedSquares() {

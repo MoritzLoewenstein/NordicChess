@@ -225,6 +225,24 @@ export const KnightDirections = [-8, -19, -21, -12, 8, 19, 21, 12];
 export const RookDirections = [-1, -10, 1, 10];
 export const BishopDirections = [-9, -11, 11, 9];
 export const KingDirections = [-1, -10, 1, 10, -9, -11, 11, 9];
+export const PieceDirections = [
+  // empty
+  [],
+  // white
+  [],
+  KnightDirections,
+  BishopDirections,
+  RookDirections,
+  KingDirections,
+  KingDirections,
+  // black
+  [],
+  KnightDirections,
+  BishopDirections,
+  RookDirections,
+  KingDirections,
+  KingDirections,
+];
 
 // prettier-ignore
 // 120 Board for easy offboard detection

@@ -16,6 +16,9 @@
 
   const RANKS_CHAR = "12345678";
 
+  // board size with border
+  const BOARD_SIZE_SAFE = 120;
+
   // integer representation of pieces
   const PIECES = {
     EMPTY: 0,
@@ -77,6 +80,18 @@
     COLORS.WHITE, COLORS.WHITE, COLORS.WHITE, COLORS.WHITE, COLORS.WHITE, COLORS.WHITE,
     // black
     COLORS.BLACK, COLORS.BLACK, COLORS.BLACK, COLORS.BLACK, COLORS.BLACK, COLORS.BLACK,
+  ];
+
+  // prettier-ignore
+  const PiecePawn = [
+    // empty
+    false,
+    // white
+    true,
+    false, false, false, false, false,
+    // black
+    true,
+    false, false, false, false, false
   ];
 
   // prettier-ignore
@@ -142,6 +157,23 @@
   const RookDirections = [-1, -10, 1, 10];
   const BishopDirections = [-9, -11, 11, 9];
   const KingDirections = [-1, -10, 1, 10, -9, -11, 11, 9];
+
+  // prettier-ignore
+  // 120 Board for easy offboard detection
+  const Sq120ToSq64 = [
+    65, 65, 65, 65, 65, 65, 65, 65, 65, 65,
+    65, 65, 65, 65, 65, 65, 65, 65, 65, 65,
+    65,  0,  1,  2,  3,  4,  5,  6,  7, 65,
+    65,  8,  9, 10, 11, 12, 13, 14, 15, 65,
+    65, 16, 17, 18, 19, 20, 21, 22, 23, 65,
+    65, 24, 25, 26, 27, 28, 29, 30, 31, 65,
+    65, 32, 33, 34, 35, 36, 37, 38, 39, 65,
+    65, 40, 41, 42, 43, 44, 45, 46, 47, 65,
+    65, 48, 49, 50, 51, 52, 53, 54, 55, 65,
+    65, 56, 57, 58, 59, 60, 61, 62, 63, 65,
+    65, 65, 65, 65, 65, 65, 65, 65, 65, 65,
+    65, 65, 65, 65, 65, 65, 65, 65, 65, 65,
+  ];
 
   // https://regex101.com/r/ykc7s9/9
   // https://chess.stackexchange.com/questions/1482/how-to-know-when-a-fen-position-is-legal
@@ -295,17 +327,19 @@
     }
   }
 
+  //* utility functions to convert different board & piece representations *//
+
   // 120 board index to file and rank
   function Square2FileRank(sq) {
     sq = Sq120ToSq64[sq];
-    if (sq === 65) throw Error(`Invalid ${sq}`);
+    if (sq === 65) throw Error(`Invalid square ${sq}`);
     return [sq % 8, Math.floor(sq / 8)];
   }
 
   // file & rank to 120 board index
   function FileRank2Square(f, r) {
     if (f === FILES.NONE || r === RANKS.NONE)
-      throw Error(`Invalid File ${f} or Rank ${r}`);
+      throw Error(`Invalid file ${f} or rank ${r}`);
     return 21 + f + r * 10;
   }
 
@@ -315,6 +349,11 @@
       FILES[`${str.charAt(0).toUpperCase()}_`],
       RANKS[`_${str.charAt(1)}`]
     );
+  }
+
+  function Square2SquareStr(sq) {
+    const fr = Square2FileRank(sq);
+    return `${FILES_CHAR[fr[0]]}${RANKS_CHAR[fr[1]]}`;
   }
 
   function Str2Piece(str) {
@@ -348,6 +387,11 @@
     }
   }
 
+  function oppositeColor(color) {
+    if (color === COLORS.BOTH) throw Error("No opposite color for BOTH");
+    return color === COLORS.WHITE ? COLORS.BLACK : COLORS.WHITE;
+  }
+
   // todo pgn
   //https://en.wikipedia.org/wiki/Portable_Game_Notation
 
@@ -374,7 +418,7 @@
   function Fen2EnPassant(enPassant) {
     if (enPassant === "-") return 0;
     return FileRank2Square(
-      FILES[`${enPassant.charAt(0)}_`],
+      FILES[`${enPassant.charAt(0).toUpperCase()}_`],
       RANKS[`_${enPassant.charAt(1)}`]
     );
   }
@@ -417,28 +461,29 @@
   }
 
   function Fen2Board(pieces) {
-    let board = new Array(120).fill(SQUARES.OFFBOARD);
+    let board = new Array(BOARD_SIZE_SAFE).fill(SQUARES.OFFBOARD);
     // Fen is starting at rank 8
     const ranks = pieces.split("/").reverse();
     ranks.map((rank, rankIndex) => {
       let digits = rank.split("");
       let fileIndex = 0;
+      let charPos = 0;
       while (fileIndex <= FILES.H_) {
-        let digit = parseInt(digits[fileIndex], 10);
+        let digit = parseInt(digits[charPos], 10);
         if (isNaN(digit)) {
           board[FileRank2Square(fileIndex, rankIndex)] = Str2Piece(
-            digits[fileIndex]
+            digits[charPos]
           );
           fileIndex++;
         } else {
-          // zero based
-          digit -= 1;
-          while (digit > 0) {
-            board[FileRank2Square(fileIndex, rankIndex)] = PIECES.EMPTY;
-            digit--;
+          let counter = 0;
+          while (counter < digit) {
+            board[FileRank2Square(fileIndex + counter, rankIndex)] = PIECES.EMPTY;
+            counter++;
           }
-          fileIndex++;
+          fileIndex += digit;
         }
+        charPos++;
       }
     });
     return board;
@@ -496,11 +541,7 @@
 
     //* square and attacking color
     isSquareAttacked(sq, color) {
-      if (color === COLORS.BOTH) {
-        // todo handle error
-        console.log("wtf");
-        return;
-      }
+      if (color === COLORS.BOTH) throw Error("Color must be black or white");
 
       //* pawn
       if (color === COLORS.WHITE) {
@@ -550,7 +591,7 @@
         let piece = this.board[t_sq];
         while (piece !== SQUARES.OFFBOARD) {
           if (piece !== PIECES.EMPTY) {
-            if (PieceBishopQueen[piece] && PieceColor[piece] === color)
+            if (PieceColor[piece] === color && PieceBishopQueen[piece])
               return true;
             break;
           }
@@ -571,6 +612,60 @@
       }
 
       return false;
+    }
+
+    getPossibleSquares(sq) {
+      const piece = this.board[sq];
+      const colorOfPiece = PieceColor[piece];
+      if (piece === SQUARES.OFFBOARD) throw Error("Square is offboard");
+      if (piece === PIECES.EMPTY) throw Error("Square is empty");
+
+      if (PiecePawn[piece]) {
+        const moves = [10, 20, 11, 9];
+        const conditions = [
+          // step forward
+          (move) =>
+            this.board[sq + move] !== SQUARES.OFFBOARD &&
+            this.board[sq + move] === PIECES.EMPTY,
+          // 2 steps forward
+          (move) =>
+            ((colorOfPiece === COLORS.WHITE &&
+              Square2FileRank(sq)[1] === RANKS._2) ||
+              (colorOfPiece === COLORS.BLACK &&
+                Square2FileRank(sq)[1] === RANKS._7)) &&
+            this.board[sq + move / 2] === PIECES.EMPTY &&
+            this.board[sq + move] === PIECES.EMPTY,
+          // capture forward right
+          (move) =>
+            this.board[sq + move] !== SQUARES.OFFBOARD &&
+            this.board[sq + move] !== PIECES.EMPTY &&
+            PieceColor[this.board[sq + move]] === oppositeColor(colorOfPiece),
+          // capture forward left
+          (move) =>
+            this.board[sq + move] !== SQUARES.OFFBOARD &&
+            this.board[sq + move] !== PIECES.EMPTY &&
+            PieceColor[this.board[sq + move]] === oppositeColor(colorOfPiece),
+        ];
+        const squares = [];
+        if (PieceColor[piece] === COLORS.WHITE)
+          moves.map((dir, index) => {
+            if (conditions[index](dir)) squares.push(sq + dir);
+          });
+        else
+          moves.map((dir, index) => {
+            if (conditions[index](-dir)) squares.push(sq - dir);
+          });
+        return squares;
+      }
+      if (PieceKnight[piece]) {
+        return KnightDirections.map((dir) => sq - dir).filter(
+          (destSquare) =>
+            this.board[destSquare] !== SQUARES.OFFBOARD &&
+            (this.board[destSquare] === PIECES.EMPTY ||
+              PieceColor[this.board[destSquare]] !== colorOfPiece)
+        );
+      }
+      return [];
     }
 
     printAttackedSquares() {
@@ -646,6 +741,8 @@
       return;
     }
     removeAllPieces();
+    resetSquares();
+    document.getElementById("fen").value = "";
     const piecesStr = [
       "",
       "wP",
@@ -688,16 +785,16 @@
     }
   }
 
+  function resetSquares() {
+    document
+      .querySelectorAll(".square")
+      .forEach((el) => el.classList.remove("active", "possible", "capturable"));
+  }
+
   function flipBoard() {
-    if (document.getElementById("board").classList.contains("flipped")) {
-      document
-        .querySelectorAll("#board, #board-rows, #board-columns, .square")
-        .forEach((el) => el.classList.remove("flipped"));
-    } else {
-      document
-        .querySelectorAll("#board, #board-rows, #board-columns, .square")
-        .forEach((el) => el.classList.add("flipped"));
-    }
+    document
+      .querySelectorAll("#board, #board-rows, #board-columns, .square")
+      .forEach((el) => el.classList.toggle("flipped"));
   }
 
   function setProbabilities(whiteToWin) {
@@ -709,27 +806,29 @@
   }
 
   function setSquareActive(e) {
+    const square = SquareStr2Square(e.target.id);
+    const piece = chess.board[square];
+    if (piece === PIECES.EMPTY) throw Error("Square is empty");
+    if (PieceColor[piece] !== chess.color)
+      throw Error("Piece of incorrect color");
     // remove all square markers
-    document.querySelectorAll(".square").forEach((el) => {
-      el.classList.remove("active");
-      el.classList.remove("possible");
-      el.classList.remove("capturable");
-    });
-    //todo get possible & capturable squares
-    //todo set possible & capturable classes
-    const possible = [];
-    const capturable = [];
-    // todo remove again
-    if (chess.isSquareAttacked(SquareStr2Square(e.target.id), chess.color)) {
-      e.target.classList.add("capturable");
-      return;
-    }
-    // add active, possible & capturable markers
+    resetSquares();
+    // all possible squares
+    const possible = chess.getPossibleSquares(square);
+    // active
     e.target.classList.add("active");
-    possible.map((sq) => document.getElementById(sq).classList.add("possible"));
-    capturable.map((sq) =>
-      document.getElementById(sq).classList.add("capturable")
-    );
+    // free
+    possible
+      .filter((sq) => chess.board[sq] === PIECES.EMPTY)
+      .map(Square2SquareStr)
+      .map((sq) => document.getElementById(sq).classList.add("possible"));
+    // capturable
+    possible
+      .filter(
+        (sq) => PieceColor[chess.board[sq]] === oppositeColor(PieceColor[piece])
+      )
+      .map(Square2SquareStr)
+      .map((sq) => document.getElementById(sq).classList.add("capturable"));
   }
 
 }());

@@ -9,6 +9,7 @@ import {
   SQUARES,
   CASTLEBITS,
   FILES_CHAR,
+  BOARD_SIZE_SAFE,
 } from "./constants.js";
 
 // todo pgn
@@ -55,7 +56,7 @@ export function exportFen(
 function Fen2EnPassant(enPassant) {
   if (enPassant === "-") return 0;
   return FileRank2Square(
-    FILES[`${enPassant.charAt(0)}_`],
+    FILES[`${enPassant.charAt(0).toUpperCase()}_`],
     RANKS[`_${enPassant.charAt(1)}`]
   );
 }
@@ -98,28 +99,29 @@ export function Castling2Fen(castlingAvailability) {
 }
 
 function Fen2Board(pieces) {
-  let board = new Array(120).fill(SQUARES.OFFBOARD);
+  let board = new Array(BOARD_SIZE_SAFE).fill(SQUARES.OFFBOARD);
   // Fen is starting at rank 8
   const ranks = pieces.split("/").reverse();
   ranks.map((rank, rankIndex) => {
     let digits = rank.split("");
     let fileIndex = 0;
+    let charPos = 0;
     while (fileIndex <= FILES.H_) {
-      let digit = parseInt(digits[fileIndex], 10);
+      let digit = parseInt(digits[charPos], 10);
       if (isNaN(digit)) {
         board[FileRank2Square(fileIndex, rankIndex)] = Str2Piece(
-          digits[fileIndex]
+          digits[charPos]
         );
         fileIndex++;
       } else {
-        // zero based
-        digit -= 1;
-        while (digit > 0) {
-          board[FileRank2Square(fileIndex, rankIndex)] = PIECES.EMPTY;
-          digit--;
+        let counter = 0;
+        while (counter < digit) {
+          board[FileRank2Square(fileIndex + counter, rankIndex)] = PIECES.EMPTY;
+          counter++;
         }
-        fileIndex++;
+        fileIndex += digit;
       }
+      charPos++;
     }
   });
   return board;

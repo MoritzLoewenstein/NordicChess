@@ -1,6 +1,17 @@
 import { ChessPosition } from "./chessgame.js";
-import { FileRank2Square, SquareStr2Square } from "./funcs.js";
-import { FILES_CHAR, RANKS_CHAR } from "./constants.js";
+import {
+  FileRank2Square,
+  SquareStr2Square,
+  Square2SquareStr,
+  oppositeColor,
+} from "./funcs.js";
+import {
+  FILES_CHAR,
+  RANKS_CHAR,
+  PIECES,
+  PieceColor,
+  COLORS,
+} from "./constants.js";
 
 let chess;
 
@@ -39,6 +50,8 @@ function loadFen(loadDefault = false) {
     return;
   }
   removeAllPieces();
+  resetSquares();
+  document.getElementById("fen").value = "";
   const piecesStr = [
     "",
     "wP",
@@ -87,16 +100,16 @@ function removeAllPieces() {
   }
 }
 
+function resetSquares() {
+  document
+    .querySelectorAll(".square")
+    .forEach((el) => el.classList.remove("active", "possible", "capturable"));
+}
+
 function flipBoard() {
-  if (document.getElementById("board").classList.contains("flipped")) {
-    document
-      .querySelectorAll("#board, #board-rows, #board-columns, .square")
-      .forEach((el) => el.classList.remove("flipped"));
-  } else {
-    document
-      .querySelectorAll("#board, #board-rows, #board-columns, .square")
-      .forEach((el) => el.classList.add("flipped"));
-  }
+  document
+    .querySelectorAll("#board, #board-rows, #board-columns, .square")
+    .forEach((el) => el.classList.toggle("flipped"));
 }
 
 function setProbabilities(whiteToWin) {
@@ -108,25 +121,27 @@ function getRandomInt(max) {
 }
 
 function setSquareActive(e) {
+  const square = SquareStr2Square(e.target.id);
+  const piece = chess.board[square];
+  if (piece === PIECES.EMPTY) throw Error("Square is empty");
+  if (PieceColor[piece] !== chess.color)
+    throw Error("Piece of incorrect color");
   // remove all square markers
-  document.querySelectorAll(".square").forEach((el) => {
-    el.classList.remove("active");
-    el.classList.remove("possible");
-    el.classList.remove("capturable");
-  });
-  //todo get possible & capturable squares
-  //todo set possible & capturable classes
-  const possible = [];
-  const capturable = [];
-  // todo remove again
-  if (chess.isSquareAttacked(SquareStr2Square(e.target.id), chess.color)) {
-    e.target.classList.add("capturable");
-    return;
-  }
-  // add active, possible & capturable markers
+  resetSquares();
+  // all possible squares
+  const possible = chess.getPossibleSquares(square);
+  // active
   e.target.classList.add("active");
-  possible.map((sq) => document.getElementById(sq).classList.add("possible"));
-  capturable.map((sq) =>
-    document.getElementById(sq).classList.add("capturable")
-  );
+  // free
+  possible
+    .filter((sq) => chess.board[sq] === PIECES.EMPTY)
+    .map(Square2SquareStr)
+    .map((sq) => document.getElementById(sq).classList.add("possible"));
+  // capturable
+  possible
+    .filter(
+      (sq) => PieceColor[chess.board[sq]] === oppositeColor(PieceColor[piece])
+    )
+    .map(Square2SquareStr)
+    .map((sq) => document.getElementById(sq).classList.add("capturable"));
 }
