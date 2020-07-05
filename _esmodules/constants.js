@@ -68,6 +68,13 @@ export const COLORS = { WHITE: 0, BLACK: 1, BOTH: 2 };
 
 export const CASTLEBITS = { WKCA: 1, WQCA: 2, BKCA: 4, BQCA: 8 };
 
+export const MOVES = {
+  NORMAL: 0,
+  EnPassant: 1,
+  KingSideCastling: 2,
+  QueenSideCastling: 3,
+};
+
 // prettier-ignore
 export const SQUARES = {
   A1: 21, B1: 22, C1: 23, D1: 24, E1: 25, F1: 26, G1: 27, H1: 28,

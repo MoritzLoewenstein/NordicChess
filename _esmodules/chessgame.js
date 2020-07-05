@@ -49,22 +49,50 @@ class ChessPosition {
     return "";
   }
 
-  move(srcSquare, destSquare) {
+  move(move) {
     // empty src
-    if (this.board(srcSquare) === PIECES.EMPTY)
-      throw Error(`No piece on Square ${srcSquare}`);
+    if (this.board[move[0]] === PIECES.EMPTY)
+      throw Error(`No piece on Square ${move[0]}`);
+
+    // todo check for move type / special moves
+    const piece = this.board[move[0]];
+    this.board[move[0]] = PIECES.EMPTY;
+    this.board[move[1]] = piece;
+
+    // switch side to play
+    this.color = oppositeColor(this.color);
   }
 
   isGameOver() {
     return this.isCheckmate() || this.isRemis();
   }
 
-  isCheckmate() {
-    // check checkmate
-    // todo check if under threat
-    //todo check all surrounding fields
-    // todo if he can capture is victim covered?
-    return false;
+  isCheckmate(color) {
+    if (color === COLORS.BOTH) throw Error("Color must be black or white");
+    // todo get king square of color
+    const kingSquare = 0;
+    if (!this.isSquareAttacked(kingSquare, oppositeColor(color))) {
+      return false;
+    }
+    // todo get all possible moves for every piece of color
+    // todo implement special moves (e.p., castling, promotion)
+    // one move is array of length 2 with srcSquare & destSquare
+    const allMoves = [];
+    return allMoves.some((move) => {
+      // make move
+      let sq = this.board[move[1]];
+      this.board[move[1]] = this.board[move[0]];
+      this.board[move[0]] = PIECES.EMPTY;
+      // is king still attacked?
+      const kingAttacked = this.isSquareAttacked(
+        kingSquare,
+        oppositeColor(color)
+      );
+      // undo move
+      this.board[move[0]] = this.board[move[1]];
+      this.board[move[1]] = sq;
+      return !kingAttacked;
+    });
   }
 
   isRemis() {
@@ -151,16 +179,18 @@ class ChessPosition {
     return false;
   }
 
+  // movegen for 1 specific square
   getPossibleSquares(sq) {
     const piece = this.board[sq];
     const colorOfPiece = PieceColor[piece];
     if (piece === SQUARES.OFFBOARD) throw Error("Square is offboard");
     if (piece === PIECES.EMPTY) throw Error("Square is empty");
 
+    //* Pawns *//
     if (PiecePawn[piece]) {
-      const moves = [10, 20, 11, 9];
+      const directions = [10, 20, 11, 9];
       const conditions = [
-        // step forward
+        // 1 step forward
         (move) =>
           this.board[sq + move] !== SQUARES.OFFBOARD &&
           this.board[sq + move] === PIECES.EMPTY,
@@ -184,23 +214,33 @@ class ChessPosition {
           PieceColor[this.board[sq + move]] === oppositeColor(colorOfPiece),
       ];
       const squares = [];
-      if (PieceColor[piece] === COLORS.WHITE)
-        moves.map((dir, index) => {
-          if (conditions[index](dir)) squares.push(sq + dir);
-        });
-      else
-        moves.map((dir, index) => {
-          if (conditions[index](-dir)) squares.push(sq - dir);
-        });
+      const mult = PieceColor[piece] === COLORS.WHITE ? 1 : -1;
+      directions.map((dir, index) => {
+        if (conditions[index](mult * dir)) {
+          const move = [sq, sq + mult * dir];
+          // promotion
+          if (
+            (PieceColor[this.board[sq]] === COLORS.WHITE &&
+              Square2FileRank(sq + mult * dir)[1] === RANKS._8) ||
+            (PieceColor[this.board[sq]] === COLORS.BLACK &&
+              Square2FileRank(sq + mult * dir)[1] === RANKS._1)
+          ) {
+            //move.push();
+          }
+          // todo en passant
+          squares.push(move);
+        }
+      });
       return squares;
     }
+
+    //* Knights *//
     if (PieceKnight[piece]) {
-      return KnightDirections.map((dir) => sq - dir).filter(
-        (destSquare) =>
-          this.board[destSquare] !== SQUARES.OFFBOARD &&
-          (this.board[destSquare] === PIECES.EMPTY ||
-            PieceColor[this.board[destSquare]] !== colorOfPiece)
-      );
+      return KnightDirections.filter(
+        (dir) =>
+          this.board[sq + dir] === PIECES.EMPTY ||
+          PieceColor[this.board[sq + dir]] === oppositeColor(colorOfPiece)
+      ).map((dir) => [sq, sq + dir]);
     }
     return [];
   }
@@ -220,7 +260,7 @@ class ChessPosition {
   }
 
   prettyPrint() {
-    console.log("\nGame Board:\n");
+    console.log("\nBoard:\n");
     for (let rank = RANKS._8; rank >= RANKS._1; rank--) {
       let line = `${rank + 1}  `;
       for (let file = FILES.A_; file <= FILES.H_; file++) {
@@ -241,7 +281,7 @@ class ChessPosition {
   }
 }
 
-// minimax algorith with alpha-beta pruning
+// minimax algorithm with alpha-beta pruning
 // initial call: minimax(position, n, -Infinity, +Infinity, true)
 function minimax(position, depth, alpha, beta, maximizingPlayer) {
   if (depth === 0 || position.isGameOver()) return position.evaluate();

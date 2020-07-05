@@ -14,6 +14,8 @@ import {
 } from "./constants.js";
 
 let chess;
+let playerMoves = [];
+let playerMovesEventListeners = [];
 
 window.onload = function () {
   loadFen(true);
@@ -32,8 +34,9 @@ window.onload = function () {
   });
   document
     .getElementById("test")
-    .addEventListener("click", (e) =>
-      setProbabilities(getRandomInt(100) / 100)
+    .addEventListener(
+      "click",
+      (e) => (chess.color = oppositeColor(chess.color))
     );
   document.querySelectorAll(".square").forEach((square) => {
     square.addEventListener("click", setSquareActive);
@@ -120,6 +123,21 @@ function getRandomInt(max) {
   return Math.floor(Math.random() * Math.floor(max));
 }
 
+function playMove(index) {
+  const move = playerMoves[index];
+  console.log(move);
+  resetSquares();
+  document
+    .getElementById(Square2SquareStr(move[1]))
+    .removeEventListener("click", playerMovesEventListeners[index]);
+  chess.move(move);
+  document
+    .getElementById(Square2SquareStr(move[1]))
+    .addEventListener("click", setSquareActive);
+  movePiece(Square2SquareStr(move[0]), Square2SquareStr(move[1]));
+}
+
+// move => [src, dest, type, index, special1, special2 ]
 function setSquareActive(e) {
   const square = SquareStr2Square(e.target.id);
   const piece = chess.board[square];
@@ -129,16 +147,27 @@ function setSquareActive(e) {
   // remove all square markers
   resetSquares();
   // all possible squares
-  const possible = chess.getPossibleSquares(square);
+  playerMoves = chess.getPossibleSquares(square);
+  playerMoves.map((move, index) => {
+    document
+      .getElementById(Square2SquareStr(move[1]))
+      .removeEventListener("click", setSquareActive);
+    playerMovesEventListeners[index] = (e) => playMove(index);
+    document
+      .getElementById(Square2SquareStr(move[1]))
+      .addEventListener("click", playerMovesEventListeners[index]);
+  });
   // active
   e.target.classList.add("active");
   // free
-  possible
+  playerMoves
+    .map((move) => move[1])
     .filter((sq) => chess.board[sq] === PIECES.EMPTY)
     .map(Square2SquareStr)
     .map((sq) => document.getElementById(sq).classList.add("possible"));
   // capturable
-  possible
+  playerMoves
+    .map((move) => move[1])
     .filter(
       (sq) => PieceColor[chess.board[sq]] === oppositeColor(PieceColor[piece])
     )

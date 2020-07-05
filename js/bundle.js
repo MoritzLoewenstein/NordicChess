@@ -512,22 +512,50 @@
       return "";
     }
 
-    move(srcSquare, destSquare) {
+    move(move) {
       // empty src
-      if (this.board(srcSquare) === PIECES.EMPTY)
-        throw Error(`No piece on Square ${srcSquare}`);
+      if (this.board[move[0]] === PIECES.EMPTY)
+        throw Error(`No piece on Square ${move[0]}`);
+
+      // todo check for move type / special moves
+      const piece = this.board[move[0]];
+      this.board[move[0]] = PIECES.EMPTY;
+      this.board[move[1]] = piece;
+
+      // switch side to play
+      this.color = oppositeColor(this.color);
     }
 
     isGameOver() {
       return this.isCheckmate() || this.isRemis();
     }
 
-    isCheckmate() {
-      // check checkmate
-      // todo check if under threat
-      //todo check all surrounding fields
-      // todo if he can capture is victim covered?
-      return false;
+    isCheckmate(color) {
+      if (color === COLORS.BOTH) throw Error("Color must be black or white");
+      // todo get king square of color
+      const kingSquare = 0;
+      if (!this.isSquareAttacked(kingSquare, oppositeColor(color))) {
+        return false;
+      }
+      // todo get all possible moves for every piece of color
+      // todo implement special moves (e.p., castling, promotion)
+      // one move is array of length 2 with srcSquare & destSquare
+      const allMoves = [];
+      return allMoves.some((move) => {
+        // make move
+        let sq = this.board[move[1]];
+        this.board[move[1]] = this.board[move[0]];
+        this.board[move[0]] = PIECES.EMPTY;
+        // is king still attacked?
+        const kingAttacked = this.isSquareAttacked(
+          kingSquare,
+          oppositeColor(color)
+        );
+        // undo move
+        this.board[move[0]] = this.board[move[1]];
+        this.board[move[1]] = sq;
+        return !kingAttacked;
+      });
     }
 
     isRemis() {
@@ -614,16 +642,18 @@
       return false;
     }
 
+    // movegen for 1 specific square
     getPossibleSquares(sq) {
       const piece = this.board[sq];
       const colorOfPiece = PieceColor[piece];
       if (piece === SQUARES.OFFBOARD) throw Error("Square is offboard");
       if (piece === PIECES.EMPTY) throw Error("Square is empty");
 
+      //* Pawns *//
       if (PiecePawn[piece]) {
-        const moves = [10, 20, 11, 9];
+        const directions = [10, 20, 11, 9];
         const conditions = [
-          // step forward
+          // 1 step forward
           (move) =>
             this.board[sq + move] !== SQUARES.OFFBOARD &&
             this.board[sq + move] === PIECES.EMPTY,
@@ -647,23 +677,31 @@
             PieceColor[this.board[sq + move]] === oppositeColor(colorOfPiece),
         ];
         const squares = [];
-        if (PieceColor[piece] === COLORS.WHITE)
-          moves.map((dir, index) => {
-            if (conditions[index](dir)) squares.push(sq + dir);
-          });
-        else
-          moves.map((dir, index) => {
-            if (conditions[index](-dir)) squares.push(sq - dir);
-          });
+        const mult = PieceColor[piece] === COLORS.WHITE ? 1 : -1;
+        directions.map((dir, index) => {
+          if (conditions[index](mult * dir)) {
+            const move = [sq, sq + mult * dir];
+            // promotion
+            if (
+              (PieceColor[this.board[sq]] === COLORS.WHITE &&
+                Square2FileRank(sq + mult * dir)[1] === RANKS._8) ||
+              (PieceColor[this.board[sq]] === COLORS.BLACK &&
+                Square2FileRank(sq + mult * dir)[1] === RANKS._1)
+            ) ;
+            // todo en passant
+            squares.push(move);
+          }
+        });
         return squares;
       }
+
+      //* Knights *//
       if (PieceKnight[piece]) {
-        return KnightDirections.map((dir) => sq - dir).filter(
-          (destSquare) =>
-            this.board[destSquare] !== SQUARES.OFFBOARD &&
-            (this.board[destSquare] === PIECES.EMPTY ||
-              PieceColor[this.board[destSquare]] !== colorOfPiece)
-        );
+        return KnightDirections.filter(
+          (dir) =>
+            this.board[sq + dir] === PIECES.EMPTY ||
+            PieceColor[this.board[sq + dir]] === oppositeColor(colorOfPiece)
+        ).map((dir) => [sq, sq + dir]);
       }
       return [];
     }
@@ -683,7 +721,7 @@
     }
 
     prettyPrint() {
-      console.log("\nGame Board:\n");
+      console.log("\nBoard:\n");
       for (let rank = RANKS._8; rank >= RANKS._1; rank--) {
         let line = `${rank + 1}  `;
         for (let file = FILES.A_; file <= FILES.H_; file++) {
@@ -705,6 +743,8 @@
   }
 
   let chess;
+  let playerMoves = [];
+  let playerMovesEventListeners = [];
 
   window.onload = function () {
     loadFen(true);
@@ -723,8 +763,9 @@
     });
     document
       .getElementById("test")
-      .addEventListener("click", (e) =>
-        setProbabilities(getRandomInt(100) / 100)
+      .addEventListener(
+        "click",
+        (e) => (chess.color = oppositeColor(chess.color))
       );
     document.querySelectorAll(".square").forEach((square) => {
       square.addEventListener("click", setSquareActive);
@@ -775,6 +816,12 @@
     ).style.backgroundImage = `url(images/${piece}.svg)`;
   }
 
+  function movePiece(squareSrc, squareDst) {
+    const img = document.getElementById(squareSrc).style.backgroundImage;
+    document.getElementById(squareDst).style.backgroundImage = img;
+    document.getElementById(squareSrc).style.backgroundImage = "none";
+  }
+
   function removeAllPieces() {
     for (let rank = 0; rank < 8; rank++) {
       for (let file = 0; file < 8; file++) {
@@ -797,14 +844,21 @@
       .forEach((el) => el.classList.toggle("flipped"));
   }
 
-  function setProbabilities(whiteToWin) {
-    document.getElementById("prob-white").style.width = `${whiteToWin * 30}vw`;
+  function playMove(index) {
+    const move = playerMoves[index];
+    console.log(move);
+    resetSquares();
+    document
+      .getElementById(Square2SquareStr(move[1]))
+      .removeEventListener("click", playerMovesEventListeners[index]);
+    chess.move(move);
+    document
+      .getElementById(Square2SquareStr(move[1]))
+      .addEventListener("click", setSquareActive);
+    movePiece(Square2SquareStr(move[0]), Square2SquareStr(move[1]));
   }
 
-  function getRandomInt(max) {
-    return Math.floor(Math.random() * Math.floor(max));
-  }
-
+  // move => [src, dest, type, index, special1, special2 ]
   function setSquareActive(e) {
     const square = SquareStr2Square(e.target.id);
     const piece = chess.board[square];
@@ -814,16 +868,27 @@
     // remove all square markers
     resetSquares();
     // all possible squares
-    const possible = chess.getPossibleSquares(square);
+    playerMoves = chess.getPossibleSquares(square);
+    playerMoves.map((move, index) => {
+      document
+        .getElementById(Square2SquareStr(move[1]))
+        .removeEventListener("click", setSquareActive);
+      playerMovesEventListeners[index] = (e) => playMove(index);
+      document
+        .getElementById(Square2SquareStr(move[1]))
+        .addEventListener("click", playerMovesEventListeners[index]);
+    });
     // active
     e.target.classList.add("active");
     // free
-    possible
+    playerMoves
+      .map((move) => move[1])
       .filter((sq) => chess.board[sq] === PIECES.EMPTY)
       .map(Square2SquareStr)
       .map((sq) => document.getElementById(sq).classList.add("possible"));
     // capturable
-    possible
+    playerMoves
+      .map((move) => move[1])
       .filter(
         (sq) => PieceColor[chess.board[sq]] === oppositeColor(PieceColor[piece])
       )
