@@ -1,7 +1,3 @@
-### TODO
-- [ ] move gen
-- [ ] position evaluation
-
 ### FEN RegEx
 Goal of this RegEx is NOT to validate legal positions
 
