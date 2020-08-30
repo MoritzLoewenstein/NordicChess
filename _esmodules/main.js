@@ -38,9 +38,7 @@ window.onload = function () {
       "click",
       (e) => (chess.color = oppositeColor(chess.color))
     );
-  document.querySelectorAll(".square").forEach((square) => {
-    square.addEventListener("click", setSquareActive);
-  });
+  cleanActiveSquareEventListeners();
 };
 
 function loadFen(loadDefault = false) {
@@ -53,7 +51,7 @@ function loadFen(loadDefault = false) {
     return;
   }
   removeAllPieces();
-  resetSquares();
+  removeSpecialSquareClasses();
   document.getElementById("fen").value = "";
   const piecesStr = [
     "",
@@ -79,6 +77,7 @@ function loadFen(loadDefault = false) {
   }
   chess.printAttackedSquares();
   chess.prettyPrint();
+  cleanActiveSquareEventListeners();
 }
 
 function setPiece(square, piece) {
@@ -103,12 +102,6 @@ function removeAllPieces() {
   }
 }
 
-function resetSquares() {
-  document
-    .querySelectorAll(".square")
-    .forEach((el) => el.classList.remove("active", "possible", "capturable"));
-}
-
 function flipBoard() {
   document
     .querySelectorAll("#board, #board-rows, #board-columns, .square")
@@ -124,28 +117,28 @@ function getRandomInt(max) {
 }
 
 function playMove(index) {
+  removeSpecialSquareClasses();
+  removeAllMoveEventListeners();
   const move = playerMoves[index];
-  console.log(move);
-  resetSquares();
-  document
-    .getElementById(Square2SquareStr(move[1]))
-    .removeEventListener("click", playerMovesEventListeners[index]);
   chess.move(move);
   document
     .getElementById(Square2SquareStr(move[1]))
     .addEventListener("click", setSquareActive);
   movePiece(Square2SquareStr(move[0]), Square2SquareStr(move[1]));
+  cleanActiveSquareEventListeners();
 }
 
 // move => [src, dest, type, index, special1, special2 ]
 function setSquareActive(e) {
+  removeSpecialSquareClasses();
+  removeAllMoveEventListeners();
+
   const square = SquareStr2Square(e.target.id);
   const piece = chess.board[square];
   if (piece === PIECES.EMPTY) throw Error("Square is empty");
   if (PieceColor[piece] !== chess.color)
     throw Error("Piece of incorrect color");
-  // remove all square markers
-  resetSquares();
+
   // all possible squares
   playerMoves = chess.getPossibleSquares(square);
   playerMoves.map((move, index) => {
@@ -153,8 +146,10 @@ function setSquareActive(e) {
       .getElementById(Square2SquareStr(move[1]))
       .removeEventListener("click", setSquareActive);
     playerMovesEventListeners[index] = (e) => playMove(index);
+    const sq = Square2SquareStr(move[1]);
+    console.log(sq);
     document
-      .getElementById(Square2SquareStr(move[1]))
+      .getElementById(sq)
       .addEventListener("click", playerMovesEventListeners[index]);
   });
   // active
@@ -173,4 +168,26 @@ function setSquareActive(e) {
     )
     .map(Square2SquareStr)
     .map((sq) => document.getElementById(sq).classList.add("capturable"));
+}
+
+function removeAllMoveEventListeners() {
+  playerMoves.map((move, index) => {
+    document
+      .getElementById(Square2SquareStr(move[1]))
+      .removeEventListener("click", playerMovesEventListeners[index]);
+  });
+}
+
+// can be further optimized to only add event listeners to the current color
+function cleanActiveSquareEventListeners() {
+  document.querySelectorAll(".square").forEach((square) => {
+    if (square.style.backgroundImage !== "none")
+      square.addEventListener("click", setSquareActive);
+  });
+}
+
+function removeSpecialSquareClasses() {
+  document
+    .querySelectorAll(".square")
+    .forEach((el) => el.classList.remove("active", "possible", "capturable"));
 }
